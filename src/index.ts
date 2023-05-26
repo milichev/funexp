@@ -18,12 +18,15 @@ export const makeFun =
     ctxVar = DEFAULT_CTX_VAR,
     entryPrefix = DEFAULT_ENTRY_PREFIX,
   }: FunExpOptions = {}): Fun =>
-  (tpl, ...args): FunExpResult =>
-    tpl.reduce(
+  (tpl, ...args): FunExpResult => {
+    const intervents = new Map<any, string>();
+    return tpl.reduce(
       (result, str, i) => {
         result.src += str;
         if (args.length > i) {
-          const entryKey = `${entryPrefix}${i}`;
+          const value = args[i];
+          const entryKey = intervents.get(value) ?? `${entryPrefix}${i}`;
+          intervents.set(value, entryKey);
           result.src += `${ctxVar}.${entryKey}`;
           result.ctx[entryKey] = args[i];
         }
@@ -31,5 +34,6 @@ export const makeFun =
       },
       { src: "", ctx: {} } as FunExpResult
     );
+  };
 
 export const fun = makeFun();

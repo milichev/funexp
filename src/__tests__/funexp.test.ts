@@ -31,6 +31,26 @@ describe("funexp", () => {
     });
   });
 
+  it("should reuse same interventions", () => {
+    const method1 = () => 1;
+    expect(fun`return {
+      a: ${method1}(),
+      b: ${method1}(),
+      c: ${method1}(),
+      d: ${method1}(),
+    };`).toEqual<FunExpResult>({
+      src: `return {
+      a: ctx._e0(),
+      b: ctx._e0(),
+      c: ctx._e0(),
+      d: ctx._e0(),
+    };`,
+      ctx: {
+        _e0: method1,
+      },
+    });
+  });
+
   it("should be usable for real case", () => {
     // Define a method that is used in the function expression.
     const toDate = jest.fn((value: Date | string | number) => new Date(value));
