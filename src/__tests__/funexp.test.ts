@@ -51,6 +51,22 @@ describe("funexp", () => {
     });
   });
 
+  it("should iterate each value", () => {
+    const model = {
+      a: 1,
+      b: 2,
+      c: 3,
+    };
+    const props: ReadonlyArray<keyof typeof model> = ["a", "b", "c"];
+
+    const actual = fun.each(props)`log(model.${"%s"});`;
+
+    expect(actual).toEqual<FunExpResult>({
+      src: "log(model.a);log(model.b);log(model.c);",
+      ctx: {},
+    });
+  });
+
   it("should be usable for real case", () => {
     // Define a method that is used in the function expression.
     const toDate = jest.fn((value: Date | string | number) => new Date(value));

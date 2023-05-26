@@ -20,6 +20,14 @@ yarn add @milichev/funexp
 
 With this tiny tagged expression processor, you can create a highly performant functions in runtime.
 
+### Example: making a data model processor
+
+Here, we create a function that accepts a model object and patches its
+properties:
+
+* changes the `createdOn` type to `Date`;
+* calculates the `total` value.
+
 ```typescript
 // Define a method that is used in the function expression.
 const toDate = jest.fn((value: Date | string | number) => new Date(value));
@@ -57,4 +65,26 @@ expect(calcTotal).toHaveBeenCalledWith(100, 0.75);
 expect(result).toBe(model);
 expect(result.createdOn).toEqual(new Date(createdOn));
 expect(result.total).toEqual(75);
+```
+
+### Example: processing an array of arguments with the same template
+
+Using the method `each(values: any[])`, you can apply the same template to each value.
+
+To inject the next value to the template, use the placeholder `"%s"` as follows:
+
+```typescript
+    const model = {
+    a: 1,
+    b: 2,
+    c: 3,
+};
+const props: ReadonlyArray<keyof typeof model> = ["a", "b", "c"];
+
+const actual = fun.each(props)`log(model.${"%s"});`;
+
+expect(actual).toEqual<FunExpResult>({
+    src: "log(model.a);log(model.b);log(model.c);",
+    ctx: {},
+});
 ```
