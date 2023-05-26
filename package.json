@@ -1,6 +1,6 @@
 {
   "name": "@milichev/funexp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A simple template function expression generator",
   "main": "dist/index.js",
   "type": "commonjs",
