@@ -1,4 +1,4 @@
-# @milichev/funexp
+# funtplexp
 
 > A simple template function expression generator.
 
@@ -7,26 +7,50 @@
 NPM:
 
 ```shell
-npm install @milichev/funexp
+npm install funtplexp
 ```
 
 Yarn:
 
 ```shell
-yarn add @milichev/funexp
+yarn add funtplexp
 ```
 
 ## Usage
 
 With this tiny tagged expression processor, you can create a highly performant functions in runtime.
 
+```typescript
+// template literal arguments
+const calcTotal = (model: Model, discount: number) => model.price * discount;
+const processModel = (model: Model) => doSomethingWithTheModel(model);
+const discount = 0.75;
+
+// creating the expression
+const exp = fun`
+    model.total = ${calcTotal}(model, ${discount});
+    return ${processModel}(model);`;
+// {
+//   src: `
+//     model.total = ctx.$e_0(model, ctx.$e_1);
+//     return ctx.$e_2(model);`,
+//   ctx: { $e_0: calcTotal, $e_1: 0.75, $e_2: processModel },
+// }
+
+// compile a function, binding the context object.
+const fn = new Function("ctx", "model", exp.src).bind(null, exp.ctx);
+
+// use the resulting function, pass a model argument and get it processed
+console.log(fn(model));
+```
+
 ### Example: making a data model processor
 
 Here, we create a function that accepts a model object and patches its
 properties:
 
-* changes the `createdOn` type to `Date`;
-* calculates the `total` value.
+- changes the `createdOn` type to `Date`;
+- calculates the `total` value.
 
 ```typescript
 // Define a method that is used in the function expression.
@@ -74,17 +98,17 @@ Using the method `each(values: any[])`, you can apply the same template to each 
 To inject the next value to the template, use the placeholder `"%s"` as follows:
 
 ```typescript
-    const model = {
-    a: 1,
-    b: 2,
-    c: 3,
+const model = {
+  a: 1,
+  b: 2,
+  c: 3,
 };
 const props: ReadonlyArray<keyof typeof model> = ["a", "b", "c"];
 
 const actual = fun.each(props)`log(model.${"%s"});`;
 
 expect(actual).toEqual<FunExpResult>({
-    src: "log(model.a);log(model.b);log(model.c);",
-    ctx: {},
+  src: "log(model.a);log(model.b);log(model.c);",
+  ctx: {},
 });
 ```

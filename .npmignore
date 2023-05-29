@@ -3,3 +3,4 @@ src
 *ignore
 babel.config.js
 tsconfig.json
+.idea

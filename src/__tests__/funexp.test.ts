@@ -2,20 +2,20 @@ import {
   DEFAULT_CTX_VAR,
   DEFAULT_ENTRY_PREFIX,
   fun,
-  FunExpResult,
+  FunExp,
   makeFun,
 } from "../index";
 
-describe("funexp", () => {
+describe("funtplexp", () => {
   it("should export proper things", () => {
     expect(fun).toEqual(expect.any(Function));
     expect(makeFun).toEqual(expect.any(Function));
     expect(DEFAULT_CTX_VAR).toEqual("ctx");
-    expect(DEFAULT_ENTRY_PREFIX).toEqual("_e");
+    expect(DEFAULT_ENTRY_PREFIX).toEqual("$e_");
   });
 
   it("should return an object describing the expression without any interpolations", () => {
-    expect(fun`exp`).toEqual<FunExpResult>({
+    expect(fun`exp`).toEqual<FunExp>({
       src: "exp",
       ctx: {},
     });
@@ -24,10 +24,34 @@ describe("funexp", () => {
   it("should interpolate placeholder values", () => {
     const method1 = () => undefined;
     const method2 = () => undefined;
+    const bool = true;
+    const str = "str";
+    const num = 3.14;
+    const nul = null;
 
-    expect(fun`${method1}; ${method2}(model);`).toEqual<FunExpResult>({
-      src: "ctx._e0; ctx._e1(model);",
-      ctx: { _e0: method1, _e1: method2 },
+    expect(
+      fun`${method1}; ${method2}(model, ${bool}, ${str}, ${num}, ${nul});`
+    ).toEqual<FunExp>({
+      src: `ctx.$e_0; ctx.$e_1(model, true, "str", 3.14, null);`,
+      ctx: { $e_0: method1, $e_1: method2 },
+    });
+  });
+
+  it("should not inline primitives", () => {
+    const myExp = makeFun({ inlinePrimitives: false });
+    const bool = true;
+    const str = "str";
+    const num = 3.14;
+    const nul = null;
+
+    expect(myExp`${bool}, ${str}, ${num}, ${nul};`).toEqual<FunExp>({
+      src: `ctx.$e_0, ctx.$e_1, ctx.$e_2, ctx.$e_3;`,
+      ctx: {
+        $e_0: bool,
+        $e_1: str,
+        $e_2: num,
+        $e_3: null,
+      },
     });
   });
 
@@ -38,15 +62,15 @@ describe("funexp", () => {
       b: ${method1}(),
       c: ${method1}(),
       d: ${method1}(),
-    };`).toEqual<FunExpResult>({
+    };`).toEqual<FunExp>({
       src: `return {
-      a: ctx._e0(),
-      b: ctx._e0(),
-      c: ctx._e0(),
-      d: ctx._e0(),
+      a: ctx.$e_0(),
+      b: ctx.$e_0(),
+      c: ctx.$e_0(),
+      d: ctx.$e_0(),
     };`,
       ctx: {
-        _e0: method1,
+        $e_0: method1,
       },
     });
   });
@@ -61,7 +85,7 @@ describe("funexp", () => {
 
     const actual = fun.each(props)`log(model.${"%s"});`;
 
-    expect(actual).toEqual<FunExpResult>({
+    expect(actual).toEqual<FunExp>({
       src: "log(model.a);log(model.b);log(model.c);",
       ctx: {},
     });
@@ -89,6 +113,8 @@ model.createdOn = ${toDate}(model.createdOn);
 model.total = ${calcTotal}(model.price, ${discount});
 return model;`;
 
+    // console.log(exp);
+    // return;
     // From the composed expression, compile a function and pass the context object to it.
     const patcher = new Function("methods", "model", exp.src).bind(
       null,
@@ -102,8 +128,8 @@ return model;`;
     // here you are, call the highly performant function, which is composed just the way you need
     const result = patcher(model);
 
-    expect(toDate).toHaveBeenCalledWith(createdOn);
     expect(calcTotal).toHaveBeenCalledWith(100, 0.75);
+    expect(toDate).toHaveBeenCalledWith(createdOn);
     expect(result).toBe(model);
     expect(result.createdOn).toEqual(new Date(createdOn));
     expect(result.total).toEqual(75);
